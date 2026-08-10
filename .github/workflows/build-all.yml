@@ -1,0 +1,124 @@
+name: Build KeepSword Projects
+
+on:
+  push:
+    paths:
+      - 'darksword-kexploit/**'
+      - 'lara/**'
+      - '.github/workflows/build-all.yml'
+  pull_request:
+    paths:
+      - 'darksword-kexploit/**'
+      - 'lara/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ========================================
+  # Job 1: Build darksword-kexploit
+  # ========================================
+  build-kexploit:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.2'
+
+      - name: Install ldid
+        run: brew install ldid
+
+      - name: Build darksword-kexploit
+        working-directory: darksword-kexploit
+        run: |
+          make
+          make sign
+
+      - name: Verify binary
+        working-directory: darksword-kexploit
+        run: |
+          echo "=== Binary info ==="
+          file darksword-pe
+          echo "=== Entitlements ==="
+          ldid -e darksword-pe || true
+          echo "=== Size ==="
+          ls -lh darksword-pe
+
+      - name: Run offset tests
+        working-directory: darksword-kexploit
+        run: |
+          clang -o test_offsets test_offsets.c && ./test_offsets
+
+      - name: Upload kexploit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: darksword-pe
+          path: darksword-kexploit/darksword-pe
+          retention-days: 30
+
+  # ========================================
+  # Job 2: Build lara
+  # ========================================
+  build-lara:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install ldid
+        run: brew install ldid
+
+      - name: Build lara IPA
+        working-directory: lara
+        run: |
+          chmod +x scripts/build_ipa.sh
+          ./scripts/build_ipa.sh
+
+      - name: Upload lara artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lara-ipa
+          path: lara/build/lara.ipa
+          retention-days: 30
+
+  # ========================================
+  # Job 3: Summary
+  # ========================================
+  summary:
+    needs: [build-kexploit, build-lara]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: List artifacts
+        run: |
+          echo "=== Build Artifacts ==="
+          find . -name "*.ipa" -o -name "darksword-pe" | head -20
+          ls -lhR artifacts/ 2>/dev/null || true
+
+      - name: Upload combined release
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: keepsword-builds
+          path: |
+            darksword-pe/darksword-pe
+            lara-ipa/lara.ipa
+          retention-days: 90

@@ -1,0 +1,42 @@
+# Build artifacts
+build/
+*.ipa
+*.app
+darksword-kexploit/darksword-pe
+darksword-kexploit/test_offsets
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+DerivedData/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.tmp
+*.log
+*.cache
+
+# Docker
+.docker/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# iOS SDK (don't commit large binaries)
+iPhoneOS.sdk/
+
+# Node modules (if any)
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
