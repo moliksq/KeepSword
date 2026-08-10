@@ -20,7 +20,7 @@ jobs:
   # Job 1: Build darksword-kexploit
   # ========================================
   build-kexploit:
-    runs-on: macos-15
+    runs-on: macos-14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,7 +65,7 @@ jobs:
   # Job 2: Build lara
   # ========================================
   build-lara:
-    runs-on: macos-15
+    runs-on: macos-14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
